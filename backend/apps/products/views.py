@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 
 from .models import Product
 from .serializers import ProductSerializer
+from .checkout_serializers import CheckoutSerializer
+from django.db import transaction
 
 
 class ProductListCreateView(APIView):
@@ -130,4 +132,73 @@ class ProductDetailView(APIView):
         return Response(
             {"message": "Product deleted successfully."},
             status=status.HTTP_204_NO_CONTENT,
+        )
+        
+
+
+class CheckoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CheckoutSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "message": "Checkout failed.",
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        product_ids = serializer.validated_data["product_ids"]
+
+        with transaction.atomic():
+            products = Product.objects.filter(
+                id__in=product_ids,
+                is_sold=False,
+            )
+
+            if products.count() != len(product_ids):
+                return Response(
+                    {
+                        "message": "One or more products are unavailable."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            for product in products:
+                if product.seller == request.user:
+                    return Response(
+                        {
+                            "message": (
+                                "You cannot purchase your own product."
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                if product.stock < 1:
+                    return Response(
+                        {
+                            "message": (
+                                f"{product.title} is out of stock."
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            for product in products:
+                product.stock = 0
+                product.is_sold = True
+                product.save(
+                    update_fields=["stock", "is_sold"]
+                )
+
+        return Response(
+            {
+                "message": "Checkout successful.",
+                "product_ids": product_ids,
+            },
+            status=status.HTTP_200_OK,
         )
