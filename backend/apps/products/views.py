@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -8,10 +8,29 @@ from .serializers import ProductSerializer
 
 
 class ProductListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.request.method =="GET":
+            return [AllowAny()]
+        
+        return [IsAuthenticated()]
+            
 
     def get(self, request):
         products = Product.objects.filter(is_sold=False)
+        
+        category = request.query_params.get("category")
+        min_price = request.query_params.get("min_price")
+        max_price = request.query_params.get("max_price")
+
+        if category:
+            products = products.filter(category__iexact=category)
+
+        if min_price:
+            products = products.filter(price__gte=min_price)
+
+        if max_price:
+            products = products.filter(price__lte=max_price)
 
         serializer = ProductSerializer(products, many=True)
 
