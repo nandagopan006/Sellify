@@ -1,8 +1,12 @@
-from .serializers import SignupSerializer,LoginSerializer
+from .serializers import (  SignupSerializer,
+                            LoginSerializer,
+                            LogoutSerializer )
 
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+
 
 
 class SignupAPIView(APIView):
@@ -57,3 +61,35 @@ class LoginAPIView(APIView):
                 "errors": serializer.errors,
             },
             status=status.HTTP_401_UNAUTHORIZED,)
+        
+class LogoutAPIView(APIView):
+    def post(self,request):
+        
+        serializer=LogoutSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            try:
+                serializer.save()
+
+                return Response(
+                    {
+                        "message": "Logout successful."
+                    },
+                    status=status.HTTP_200_OK,
+                )
+
+            except Exception:
+                return Response(
+                    {
+                        "message": "Invalid or expired refresh token."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        return Response(
+            {
+                "message": "Logout failed.",
+                "errors": serializer.errors,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )

@@ -114,3 +114,14 @@ class LoginSerializer(serializers.Serializer):
                 "refresh":str(refresh)
         }
         
+class LogoutSerializer(serializers.Serializer):
+    refresh=serializers.CharField()
+    
+    def validate(self,attrs):
+        
+        self.token=RefreshToken(attrs["refresh"])
+        return attrs
+    
+    def save(self, **kwargs):
+        self.token.blacklist()
+        
