@@ -58,7 +58,11 @@ class ProductListCreateView(APIView):
         )
         
 class ProductDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+
+        return [IsAuthenticated()]
 
     def get_product(self, product_id):
         try:

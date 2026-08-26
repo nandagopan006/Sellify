@@ -32,6 +32,7 @@ class ProductSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "title": {"required": True, "allow_blank": False},
             "description": {"required": True, "allow_blank": False},
+            "price": {"required": True},
             "category": {"required": True, "allow_blank": False},
         }
 
@@ -91,9 +92,9 @@ class ProductSerializer(serializers.ModelSerializer):
         return value
 
     def validate_stock(self, value):
-        if value < 1:
+        if value != 1:
             raise serializers.ValidationError(
-                "Stock must be at least 1."
+                "Stock must be exactly 1 because each listing represents one item."
             )
 
         return value
