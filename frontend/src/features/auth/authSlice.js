@@ -45,6 +45,45 @@ export const login =createAsyncThunk(
   }
 );
 
+export const logoutUser = createAsyncThunk(
+  "auth/logoutUser",
+  async (_, { getState, rejectWithValue }) => {
+    try {
+      const state = getState();
+
+      const accessToken = state.auth.accessToken;
+      const refreshToken = state.auth.refreshToken;
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/auth/logout/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            refresh: refreshToken,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data);
+      }
+
+      return data;
+    } catch (error) {
+      return rejectWithValue({
+        message: error.message||"Unable to connect to the server.",
+      });
+    }
+  }
+);
+
+
 const authSlice=createSlice({
   name :"auth",
   initialState,
@@ -80,6 +119,31 @@ const authSlice=createSlice({
         state.isAuthenticated =true
 
 
+      })
+
+      .addCase(logoutUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.loading = false;
+
+        state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.isAuthenticated = false;
+      })
+
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+
+        // Clear local auth state even if the server logout fails.
+        state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.isAuthenticated = false;
       })
   }
 })
