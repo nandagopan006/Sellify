@@ -1,4 +1,8 @@
+import { useNavigate } from "react-router-dom";
+
 function ProductCard({ product }) {
+  const navigate = useNavigate();
+
   return (
     <div>
       <img
@@ -9,13 +13,15 @@ function ProductCard({ product }) {
 
       <h2>{product.title}</h2>
 
-      <p>{product.description}</p>
-
       <p>₹{product.price}</p>
 
       <p>{product.category}</p>
 
-      <p>Seller: {product.seller}</p>
+      <button
+        onClick={() => navigate(`/products/${product.id}`)}
+      >
+        View Product
+      </button>
     </div>
   );
 }

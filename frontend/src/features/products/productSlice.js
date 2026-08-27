@@ -1,5 +1,6 @@
 import { createAsyncThunk,createSlice } from "@reduxjs/toolkit";
 
+
 const initialState ={
   products:[],
   selectedProduct:null,
@@ -31,6 +32,27 @@ export const fetchProducts =createAsyncThunk(
   }
 )
 
+export const fetchProduct =createAsyncThunk(
+   "products/fetchProduct",
+   async (productId,{rejectWithValue}) =>{
+
+    try {
+      const response = await fetch( `http://127.0.0.1:8000/api/products/${productId}/`);
+
+      const data =response.json();
+      if(!response.ok){
+
+        return rejectWithValue(data);
+      }
+      return data;
+    } catch(error){
+      return rejectWithValue({
+        message : error.message ||  "Unable to connect to the server.",
+      })
+    }
+   }
+)
+
 const productSlice = createSlice({
   name : "product",
   initialState,
@@ -53,6 +75,21 @@ const productSlice = createSlice({
     .addCase(fetchProducts.rejected, (state,action) => {
       state.loading =false
       state.error = action.payload
+    })
+
+    .addCase(fetchProduct.pending, (state)=>{
+      state.loading=true
+      state.error=null
+    })
+
+    .addCase(fetchProduct.fulfilled, (state,action)=> {
+      state.loading=false
+      state.selectedProduct=action.payload
+    })
+
+    .addCase(fetchProduct.rejected, (state,action)=>{
+      state.loading=false
+      state.error=action.payload
     })
   }
 
