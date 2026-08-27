@@ -155,7 +155,13 @@ class CheckoutView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        product_ids = serializer.validated_data["product_ids"]
+        items = serializer.validated_data["items"]
+        product_ids = []
+        quantities = {}
+
+        for item in items:
+            product_ids.append(item["product_id"])
+            quantities[item["product_id"]] = item["quantity"]
 
         with transaction.atomic():
             products = Product.objects.filter(
@@ -182,19 +188,21 @@ class CheckoutView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
-                if product.stock < 1:
+                quantity = quantities[product.id]
+                if product.stock < quantity:
                     return Response(
                         {
                             "message": (
-                                f"{product.title} is out of stock."
+                                f"Only {product.stock} of {product.title} "
+                                "are available."
                             )
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
             for product in products:
-                product.stock = 0
-                product.is_sold = True
+                product.stock -= quantities[product.id]
+                product.is_sold = product.stock == 0
                 product.save(
                     update_fields=["stock", "is_sold"]
                 )
@@ -202,7 +210,7 @@ class CheckoutView(APIView):
         return Response(
             {
                 "message": "Checkout successful.",
-                "product_ids": product_ids,
+                "items": items,
             },
             status=status.HTTP_200_OK,
         )

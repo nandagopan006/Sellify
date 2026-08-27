@@ -39,7 +39,7 @@ export const fetchProduct =createAsyncThunk(
     try {
       const response = await fetch( `http://127.0.0.1:8000/api/products/${productId}/`);
 
-      const data =response.json();
+      const data =await response.json();
       if(!response.ok){
 
         return rejectWithValue(data);

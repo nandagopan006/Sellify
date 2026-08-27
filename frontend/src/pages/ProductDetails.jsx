@@ -4,7 +4,10 @@ import { useParams } from "react-router-dom";
 import { useDispatch,useSelector } from "react-redux";
 import { fetchProduct } from "../features/products/productSlice";
 
-function ProductDetials(){
+import { addToCart } from "../features/cart/cartSlice";
+
+
+function ProductDetails(){
   const {id} =useParams()
 
   const dispatch=useDispatch()
@@ -47,7 +50,7 @@ function ProductDetials(){
 
       <p>Stock: {selectedProduct.stock}</p>
 
-      <button>
+      <button onClick={()=> dispatch(addToCart(selectedProduct))}>
         Add to Cart
       </button>
     </div>
@@ -56,4 +59,4 @@ function ProductDetials(){
 
 }
 
-export default ProductDetials;
+export default ProductDetails;
