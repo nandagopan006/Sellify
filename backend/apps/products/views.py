@@ -137,7 +137,21 @@ class ProductDetailView(APIView):
             {"message": "Product deleted successfully."},
             status=status.HTTP_204_NO_CONTENT,
         )
-        
+
+class MyProductsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        products = Product.objects.filter(
+            seller=request.user
+        )
+
+        serializer = ProductSerializer(
+            products,
+            many=True,
+        )
+
+        return Response(serializer.data)       
 
 
 class CheckoutView(APIView):

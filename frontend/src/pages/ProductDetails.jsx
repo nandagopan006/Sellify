@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { useDispatch,useSelector } from "react-redux";
 import { fetchProduct } from "../features/products/productSlice";
@@ -11,8 +11,10 @@ function ProductDetails(){
   const {id} =useParams()
 
   const dispatch=useDispatch()
+  const navigate = useNavigate();
 
   const {selectedProduct,loading,error} = useSelector((state)=> state.products)
+  const currentUser = useSelector((state) => state.auth.user);
 
   useEffect(()=>{
     dispatch(fetchProduct(id))
@@ -53,6 +55,16 @@ function ProductDetails(){
       <button onClick={()=> dispatch(addToCart(selectedProduct))}>
         Add to Cart
       </button>
+
+      {currentUser?.username === selectedProduct.seller && (
+        <button
+          onClick={() =>
+            navigate(`/products/${selectedProduct.id}/edit`)
+          }
+        >
+          Edit Product
+        </button>
+      )}
     </div>
   );
 
