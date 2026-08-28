@@ -7,6 +7,8 @@ import {
   fetchProduct,
   updateProduct,
 } from "../features/products/productSlice";
+import Loading from "../components/Loading";
+import { ErrorMessage } from "../components/Error";
 
 function EditProduct() {
   const { id } = useParams();
@@ -56,64 +58,130 @@ function EditProduct() {
   };
 
   if (loading && !selectedProduct) {
-    return <p>Loading product...</p>;
+    return <Loading text="Loading product data..." />;
   }
 
   if (!selectedProduct) {
-    return <p>Product not found.</p>;
+    return (
+      <div className="empty-state">
+        <h3 className="empty-state-title">Product not found</h3>
+        <p className="empty-state-desc">The product you want to edit does not exist.</p>
+        <button className="btn btn-primary" onClick={() => navigate("/")}>
+          Browse Products
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h1>Edit Product</h1>
+    <div style={{ maxWidth: "680px", margin: "0 auto" }}>
+      <div className="page-header">
+        <h1>Edit Product</h1>
+        <p>Update the listing details for this product.</p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <label>Title</label>
-        <input {...register("title", { required: "Title is required" })} />
-        {errors.title && <p>{errors.title.message}</p>}
+      <div className="form-card">
+        {error && (
+          <ErrorMessage error={error} message="Product update failed." />
+        )}
 
-        <label>Description</label>
-        <textarea
-          {...register("description", {
-            required: "Description is required",
-            minLength: {
-              value: 10,
-              message: "Description must be at least 10 characters",
-            },
-          })}
-        />
-        {errors.description && <p>{errors.description.message}</p>}
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="form-group">
+            <label className="form-label">Product Title</label>
+            <input
+              type="text"
+              className="form-input"
+              {...register("title", { required: "Title is required" })}
+            />
+            {errors.title && (
+              <span className="form-error">{errors.title.message}</span>
+            )}
+          </div>
 
-        <label>Price</label>
-        <input
-          type="number"
-          step="0.01"
-          {...register("price", {
-            required: "Price is required",
-            min: { value: 0.01, message: "Price must be greater than zero" },
-          })}
-        />
-        {errors.price && <p>{errors.price.message}</p>}
+          <div className="form-group">
+            <label className="form-label">Description</label>
+            <textarea
+              className="form-textarea"
+              {...register("description", {
+                required: "Description is required",
+                minLength: {
+                  value: 10,
+                  message: "Description must be at least 10 characters",
+                },
+              })}
+            />
+            {errors.description && (
+              <span className="form-error">{errors.description.message}</span>
+            )}
+          </div>
 
-        <label>Category</label>
-        <input {...register("category", { required: "Category is required" })} />
-        {errors.category && <p>{errors.category.message}</p>}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div className="form-group">
+              <label className="form-label">Price (₹)</label>
+              <input
+                type="number"
+                step="0.01"
+                className="form-input"
+                {...register("price", {
+                  required: "Price is required",
+                  min: { value: 0.01, message: "Price must be greater than zero" },
+                })}
+              />
+              {errors.price && (
+                <span className="form-error">{errors.price.message}</span>
+              )}
+            </div>
 
-        <label>Image URL</label>
-        <input
-          type="url"
-          {...register("image_url", { required: "Image URL is required" })}
-        />
-        {errors.image_url && <p>{errors.image_url.message}</p>}
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <input
+                type="text"
+                className="form-input"
+                {...register("category", { required: "Category is required" })}
+              />
+              {errors.category && (
+                <span className="form-error">{errors.category.message}</span>
+              )}
+            </div>
+          </div>
 
-        <p>Stock: 1 (each listing is one item)</p>
+          <div className="form-group">
+            <label className="form-label">Image URL</label>
+            <input
+              type="url"
+              className="form-input"
+              {...register("image_url", { required: "Image URL is required" })}
+            />
+            {errors.image_url && (
+              <span className="form-error">{errors.image_url.message}</span>
+            )}
+          </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Updating..." : "Update Product"}
-        </button>
-      </form>
+          <div className="form-group">
+            <span className="form-hint" style={{ fontWeight: 500, color: "var(--text-main)" }}>
+              Stock: 1 (each listing is one item)
+            </span>
+          </div>
 
-      {error && <p>{error.message || "Product update failed."}</p>}
+          <div style={{ marginTop: "1.75rem", display: "flex", gap: "1rem" }}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+              style={{ flex: 1 }}
+            >
+              {loading ? "Updating..." : "Update Product"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => navigate(`/products/${id}`)}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

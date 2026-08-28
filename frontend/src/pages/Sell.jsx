@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { createProduct } from "../features/products/productSlice";
+import { ErrorMessage } from "../components/Error";
 
 function Sell() {
   const dispatch = useDispatch();
@@ -34,58 +35,120 @@ function Sell() {
   };
 
   return (
-    <div>
-      <h1>Sell a Product</h1>
+    <div style={{ maxWidth: "680px", margin: "0 auto" }}>
+      <div className="page-header">
+        <h1>Sell a Product</h1>
+        <p>Add the details of the item you want to list on the marketplace.</p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <label>Title</label>
-        <input {...register("title", { required: "Title is required" })} />
-        {errors.title && <p>{errors.title.message}</p>}
+      <div className="form-card">
+        {error && (
+          <ErrorMessage error={error} message="Product creation failed." />
+        )}
 
-        <label>Description</label>
-        <textarea
-          {...register("description", {
-            required: "Description is required",
-            minLength: {
-              value: 10,
-              message: "Description must be at least 10 characters",
-            },
-          })}
-        />
-        {errors.description && <p>{errors.description.message}</p>}
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <div className="form-group">
+            <label className="form-label">Product Title</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="e.g. Apple iPhone 14 128GB"
+              {...register("title", { required: "Title is required" })}
+            />
+            {errors.title && (
+              <span className="form-error">{errors.title.message}</span>
+            )}
+          </div>
 
-        <label>Price</label>
-        <input
-          type="number"
-          step="0.01"
-          {...register("price", {
-            required: "Price is required",
-            min: { value: 0.01, message: "Price must be greater than zero" },
-          })}
-        />
-        {errors.price && <p>{errors.price.message}</p>}
+          <div className="form-group">
+            <label className="form-label">Description</label>
+            <textarea
+              className="form-textarea"
+              placeholder="Describe the condition, features, accessories included..."
+              {...register("description", {
+                required: "Description is required",
+                minLength: {
+                  value: 10,
+                  message: "Description must be at least 10 characters",
+                },
+              })}
+            />
+            {errors.description && (
+              <span className="form-error">{errors.description.message}</span>
+            )}
+          </div>
 
-        <label>Category</label>
-        <input
-          {...register("category", { required: "Category is required" })}
-        />
-        {errors.category && <p>{errors.category.message}</p>}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div className="form-group">
+              <label className="form-label">Price (₹)</label>
+              <input
+                type="number"
+                step="0.01"
+                className="form-input"
+                placeholder="49999"
+                {...register("price", {
+                  required: "Price is required",
+                  min: { value: 0.01, message: "Price must be greater than zero" },
+                })}
+              />
+              {errors.price && (
+                <span className="form-error">{errors.price.message}</span>
+              )}
+            </div>
 
-        <label>Image URL</label>
-        <input
-          type="url"
-          {...register("image_url", { required: "Image URL is required" })}
-        />
-        {errors.image_url && <p>{errors.image_url.message}</p>}
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="e.g. Electronics, Vehicles"
+                {...register("category", { required: "Category is required" })}
+              />
+              {errors.category && (
+                <span className="form-error">{errors.category.message}</span>
+              )}
+            </div>
+          </div>
 
-        <p>Stock: 1 (each listing is one item)</p>
+          <div className="form-group">
+            <label className="form-label">Product Image URL</label>
+            <input
+              type="url"
+              className="form-input"
+              placeholder="https://images.unsplash.com/photo-..."
+              {...register("image_url", { required: "Image URL is required" })}
+            />
+            {errors.image_url && (
+              <span className="form-error">{errors.image_url.message}</span>
+            )}
+            <span className="form-hint">Provide a direct link to an image hosted online.</span>
+          </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Sell Product"}
-        </button>
-      </form>
+          <div className="form-group">
+            <span className="form-hint" style={{ fontWeight: 500, color: "var(--text-main)" }}>
+              Stock: 1 (each listing is treated as an individual marketplace item)
+            </span>
+          </div>
 
-      {error && <p>{error.message || "Product creation failed."}</p>}
+          <div style={{ marginTop: "1.75rem", display: "flex", gap: "1rem" }}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+              style={{ flex: 1 }}
+            >
+              {loading ? "Creating..." : "Sell Product"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => navigate(-1)}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
