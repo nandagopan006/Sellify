@@ -1,41 +1,71 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-import { createProduct } from "../features/products/productSlice";
+import {
+  fetchProduct,
+  updateProduct,
+} from "../features/products/productSlice";
 
-function Sell() {
+function EditProduct() {
+  const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useSelector((state) => state.products);
+
+  const { selectedProduct, loading, error } = useSelector(
+    (state) => state.products
+  );
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm();
 
+  useEffect(() => {
+    dispatch(fetchProduct(id));
+  }, [dispatch, id]);
+
+  useEffect(() => {
+    if (selectedProduct) {
+      reset({
+        title: selectedProduct.title,
+        description: selectedProduct.description,
+        price: selectedProduct.price,
+        category: selectedProduct.category,
+        image_url: selectedProduct.image_url,
+      });
+    }
+  }, [selectedProduct, reset]);
+
   const onSubmit = (data) => {
     const productData = {
-      title: data.title,
-      description: data.description,
+      ...data,
       price: Number(data.price),
-      category: data.category,
-      image_url: data.image_url,
       stock: 1,
     };
 
-    dispatch(createProduct(productData))
+    dispatch(updateProduct({ productId: id, productData }))
       .unwrap()
       .then(() => {
-        alert("Product created successfully.");
-        navigate("/");
+        alert("Product updated successfully.");
+        navigate(`/products/${id}`);
       });
   };
 
+  if (loading && !selectedProduct) {
+    return <p>Loading product...</p>;
+  }
+
+  if (!selectedProduct) {
+    return <p>Product not found.</p>;
+  }
+
   return (
     <div>
-      <h1>Sell a Product</h1>
+      <h1>Edit Product</h1>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <label>Title</label>
@@ -66,9 +96,7 @@ function Sell() {
         {errors.price && <p>{errors.price.message}</p>}
 
         <label>Category</label>
-        <input
-          {...register("category", { required: "Category is required" })}
-        />
+        <input {...register("category", { required: "Category is required" })} />
         {errors.category && <p>{errors.category.message}</p>}
 
         <label>Image URL</label>
@@ -81,13 +109,13 @@ function Sell() {
         <p>Stock: 1 (each listing is one item)</p>
 
         <button type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Sell Product"}
+          {loading ? "Updating..." : "Update Product"}
         </button>
       </form>
 
-      {error && <p>{error.message || "Product creation failed."}</p>}
+      {error && <p>{error.message || "Product update failed."}</p>}
     </div>
   );
 }
 
-export default Sell;
+export default EditProduct;
