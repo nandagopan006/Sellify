@@ -8,13 +8,30 @@ const initialState ={
   error:null,
 }
 
-export const fetchProducts =createAsyncThunk(
+export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
 
-  async ( _ ,{rejectWithValue}) => {
+  async (filters = {}, { rejectWithValue }) => {
     try {
+      const params = new URLSearchParams();
 
-      const response = await fetch( "http://127.0.0.1:8000/api/products/");
+      if (filters.category) {
+        params.append("category", filters.category);
+      }
+
+      if (filters.minPrice) {
+        params.append("min_price", filters.minPrice);
+      }
+
+      if (filters.maxPrice) {
+        params.append("max_price", filters.maxPrice);
+      }
+
+      const queryString = params.toString();
+      const baseUrl = "http://127.0.0.1:8000/api/products/";
+      const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+
+      const response = await fetch(url);
 
       const data = await response.json();
 
@@ -23,10 +40,10 @@ export const fetchProducts =createAsyncThunk(
       }
 
       return data;
-    } catch (error){
+    } catch (error) {
       return rejectWithValue({
-        message: error.message || "Unable to connect to the server."
-      })
+        message: error.message || "Unable to connect to the server.",
+      });
 
     }
   }

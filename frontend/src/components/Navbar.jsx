@@ -1,5 +1,5 @@
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 
 import { logoutUser } from "../features/auth/authSlice";
 
@@ -8,66 +8,62 @@ function Navbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const {
-    user,
-    isAuthenticated,
-  } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector(
+    (state) => state.auth
+  );
 
   const handleLogout = () => {
-    dispatch(logoutUser())
-      .unwrap()
-      .finally(() => {
-        navigate("/login");
-      });
+    dispatch(logoutUser());
+    navigate("/login");
   };
 
   return (
     <nav>
-      <button onClick={() => navigate("/")}>
-        Sellify
-      </button>
+      <Link to="/">
+        <h2>Sellify</h2>
+      </Link>
 
-      <button onClick={() => navigate("/")}>
-        Home
-      </button>
+      <div>
+        <Link to="/">Home</Link>
 
-      {isAuthenticated && (
-        <>
-          <button onClick={() => navigate("/sell")}>
-            Sell
-          </button>
+        <Link to="/products">
+          Products
+        </Link>
 
-          <button
-            onClick={() => navigate("/my-products")}
-          >
-            My Products
-          </button>
+        {isAuthenticated ? (
+          <>
+            <Link to="/sell">
+              Sell
+            </Link>
 
-          <button onClick={() => navigate("/cart")}>
-            Cart
-          </button>
+            <Link to="/my-products">
+              My Products
+            </Link>
 
-          <span>
-            {user?.username}
-          </span>
+            <Link to="/cart">
+              Cart
+            </Link>
 
-          <button onClick={handleLogout}>
-            Logout
-          </button>
-        </>
-      )}
+            <span>
+              Hello, {user?.username}
+            </span>
 
-      {!isAuthenticated && (
-        <>
-          <button onClick={() => navigate("/login")}>
-            Login
-          </button>
+            <button onClick={handleLogout}>
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login">
+              Login
+            </Link>
 
-          <button onClick={() => navigate("/signup")}>
-            Signup
-          </button>
-        </>
-      )}
+            <Link to="/signup">
+              Sign Up
+            </Link>
+          </>
+        )}
+      </div>
     </nav>
   );
 }

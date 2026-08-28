@@ -1,16 +1,16 @@
 import { createSlice , createAsyncThunk } from "@reduxjs/toolkit" 
+import {clearAuthData,getAuthData,saveAuthData,} from "./authStorage";
 
 
+const savedAuth = getAuthData();
 
-
-
-const initialState={
-  user:null,
-  accessToken : null,
-  refreshToken : null,
-  isAuthenticated: false ,
-  loading :false,
-  error : null
+const initialState = {
+  user: savedAuth?.user || null,
+  accessToken: savedAuth?.accessToken || null,
+  refreshToken: savedAuth?.refreshToken || null,
+  isAuthenticated: Boolean(savedAuth?.accessToken),
+  loading: false,
+  error: null,
 };
 
 
@@ -88,12 +88,14 @@ const authSlice=createSlice({
   name :"auth",
   initialState,
   reducers:{
-    logout(state){
-      state.user =null;
+    logout(state) {
+      state.user = null;
       state.accessToken = null;
-      state.refreshToken=null;
-      state.isAuthenticated=false;
+      state.refreshToken = null;
+      state.isAuthenticated = false;
       state.error = null;
+
+      clearAuthData();
     },
 
   },
@@ -109,16 +111,20 @@ const authSlice=createSlice({
         state.loading =false
         state.error =action.payload
       })
-      .addCase(login.fulfilled,(state,action)=>{
-        state.loading =false
-        
-        state.user=action.payload.user
+      .addCase(login.fulfilled, (state, action) => {
+        state.loading = false;
 
-        state.accessToken=action.payload.access
-        state.refreshToken = action.payload.refresh
-        state.isAuthenticated =true
+        state.user = action.payload.user;
+        state.accessToken = action.payload.access;
+        state.refreshToken = action.payload.refresh;
 
+        state.isAuthenticated = true;
 
+        saveAuthData({
+          user: action.payload.user,
+          accessToken: action.payload.access,
+          refreshToken: action.payload.refresh,
+        });
       })
 
       .addCase(logoutUser.pending, (state) => {
@@ -133,17 +139,21 @@ const authSlice=createSlice({
         state.accessToken = null;
         state.refreshToken = null;
         state.isAuthenticated = false;
+        state.error = null;
+
+        clearAuthData();
       })
 
       .addCase(logoutUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
 
-        // Clear local auth state even if the server logout fails.
         state.user = null;
         state.accessToken = null;
         state.refreshToken = null;
         state.isAuthenticated = false;
+
+        clearAuthData();
       })
   }
 })
