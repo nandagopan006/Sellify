@@ -47,12 +47,17 @@ class LoginAPIView(APIView):
             user=data["user"]
             
             return Response({
-                
-                
+
+
                     "message": "Login successful.",
                     "access": data["access"],
                     "refresh": data["refresh"],
-                    
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                    },
+
             },status=status.HTTP_200_OK
                             )
         
