@@ -54,6 +54,9 @@ function EditProduct() {
       .then(() => {
         alert("Product updated successfully.");
         navigate(`/products/${id}`);
+      })
+      .catch(() => {
+        
       });
   };
 

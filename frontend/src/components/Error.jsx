@@ -1,8 +1,33 @@
 import React from "react";
 
+// Pulls the most useful sentence out of a DRF error response.
+function getErrorText(error) {
+  if (!error) {
+    return "";
+  }
+
+  // Field errors look like { errors: { email: ["..."] } }
+  const fields = error.errors || error.error;
+
+  if (fields) {
+    const firstKey = Object.keys(fields)[0];
+    const firstValue = fields[firstKey];
+
+    if (Array.isArray(firstValue)) {
+      return firstValue[0];
+    }
+
+    if (typeof firstValue === "string") {
+      return firstValue;
+    }
+  }
+
+  return error.detail || error.message || "";
+}
+
 // Small red box used by pages to show an API / form error.
 export function ErrorMessage({ error, message = "Something went wrong." }) {
-  const text = error?.message || error?.detail || message;
+  const text = getErrorText(error) || message;
 
   return (
     <div className="alert alert-error">

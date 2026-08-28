@@ -91,7 +91,8 @@ class LoginSerializer(serializers.Serializer):
     password=serializers.CharField(write_only=True)
     
     def validate(self, attrs):
-        email= attrs['email']
+        # Signup saves the email lowercased, so lowercase it here too.
+        email = attrs["email"].strip().lower()
         password = attrs["password"] 
         
         try :

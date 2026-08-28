@@ -31,6 +31,9 @@ function Sell() {
       .then(() => {
         alert("Product created successfully.");
         navigate("/");
+      })
+      .catch(() => {
+        // The error is already shown by <ErrorMessage /> above the form.
       });
   };
 
