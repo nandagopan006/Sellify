@@ -45,6 +45,36 @@ export const login =createAsyncThunk(
   }
 );
 
+export const signup = createAsyncThunk(
+  "auth/signup",
+  async (signupData, { rejectWithValue }) => {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/auth/signup/",
+      {method:"POST",
+        headers :{
+          "Content-Type":"application/json"
+        },
+        body : JSON.stringify(signupData),
+      }
+
+    );
+    const data = await response.json();
+
+    if (!response.ok){
+      return rejectWithValue(data);
+    }
+
+    return data;
+
+    }catch (error) {
+      return rejectWithValue({
+        message : error.message || "Unable to connect to the server.",
+      });
+    }
+
+  }
+);
+
 export const logoutUser = createAsyncThunk(
   "auth/logoutUser",
   async (_, { getState, rejectWithValue }) => {
@@ -98,6 +128,10 @@ const authSlice=createSlice({
       clearAuthData();
     },
 
+    clearAuthError(state) {
+      state.error = null;
+    },
+
   },
 
   extraReducers :(builder) =>{
@@ -125,6 +159,23 @@ const authSlice=createSlice({
           accessToken: action.payload.access,
           refreshToken: action.payload.refresh,
         });
+      })
+
+      .addCase(signup.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(signup.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Signup does not log the user in: the backend sends back the new user
+      // but no tokens, so we only stop the loading spinner here.
+      .addCase(signup.fulfilled, (state) => {
+        state.loading = false;
+        state.error = null;
       })
 
       .addCase(logoutUser.pending, (state) => {
@@ -159,4 +210,4 @@ const authSlice=createSlice({
 })
 
 export default authSlice.reducer;
-export const {logout} = authSlice.actions
+export const {logout, clearAuthError} = authSlice.actions

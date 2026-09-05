@@ -1,17 +1,23 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
+import { useSelector, useDispatch } from "react-redux";
+
+import { signup, clearAuthError } from "../features/auth/authSlice";
+import { showToast } from "../features/toast/toastSlice";
 import { ErrorMessage } from "../components/Error";
 
 function Signup() {
   const navigate = useNavigate();
-  const [submitting, setSubmitting] = useState(false);
-  const [serverError, setServerError] = useState("");
+  const dispatch = useDispatch();
+
+  const { loading, error } = useSelector((state) => state.auth);
 
   const {
     register,
     handleSubmit,
     control,
+    setError,
     formState: { errors },
   } = useForm();
 
@@ -20,43 +26,42 @@ function Signup() {
     name: "password",
   });
 
-  const onSubmit = async (data) => {
-    setSubmitting(true);
-    setServerError("");
+  // Login and Signup share state.auth.error, so clear any old one on the way in.
+  useEffect(() => {
+    dispatch(clearAuthError());
+  }, [dispatch]);
 
-    try {
-      const response = await fetch("http://127.0.0.1:8000/api/auth/signup/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: data.username,
-          email: data.email,
-          password: data.password,
-        }),
+  const onSubmit = (data) => {
+    dispatch(
+      signup({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+      })
+    )
+      .unwrap()
+      .then(() => {
+        dispatch(showToast({ message: "Account created. Please login." }));
+        navigate("/login");
+      })
+      .catch((rejected) => {
+       
+        const fieldErrors = rejected?.errors || rejected?.error;
+
+        // No field details (server down, etc). The red banner already covers it.
+        if (!fieldErrors) {
+          return;
+        }
+
+        // Now show each message under the input it belongs to.
+        // One loop turn: name = "username", messages = ["Too short."]
+        for (const name in fieldErrors) {
+          const messages = fieldErrors[name];
+          const firstMessage = Array.isArray(messages) ? messages[0] : messages;
+
+          setError(name, { type: "server", message: firstMessage });
+        }
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.log(result);
-        setServerError(
-          typeof result === "object"
-            ? Object.values(result).flat().join(" ")
-            : "Signup failed. Please try again."
-        );
-        return;
-      }
-
-      alert("Account created successfully.");
-      navigate("/login");
-    } catch (error) {
-      console.error("Signup error :", error);
-      setServerError("Unable to connect to the server.");
-    } finally {
-      setSubmitting(false);
-    }
   };
 
   return (
@@ -67,8 +72,8 @@ function Signup() {
           <p>Join Sellify to start buying and selling</p>
         </div>
 
-        {serverError && (
-          <ErrorMessage message={serverError} />
+        {error && (
+          <ErrorMessage error={error} message="Signup failed. Please try again." />
         )}
 
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -143,10 +148,10 @@ function Signup() {
           <button
             type="submit"
             className="btn btn-primary btn-block"
-            disabled={submitting}
+            disabled={loading}
             style={{ marginTop: "1.25rem" }}
           >
-            {submitting ? "Creating account..." : "Create Account"}
+            {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 

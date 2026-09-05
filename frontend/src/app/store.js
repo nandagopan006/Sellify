@@ -3,6 +3,7 @@ import authReducer from "../features/auth/authSlice";
 import productReducer from "../features/products/productSlice"
 import cartReducer from "../features/cart/cartSlice"
 import checkoutReducer from "../features/checkout/checkoutSlice";
+import toastReducer from "../features/toast/toastSlice";
 import authMiddleware from "./authMiddleware";
 
 const store =configureStore({
@@ -11,6 +12,7 @@ const store =configureStore({
         products : productReducer,
         cart: cartReducer,
         checkout:checkoutReducer,
+        toast: toastReducer,
     },
 
     middleware: (getDefaultMiddleware) =>

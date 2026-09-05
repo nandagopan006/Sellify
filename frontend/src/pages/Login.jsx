@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { login } from "../features/auth/authSlice";
+import { login, clearAuthError } from "../features/auth/authSlice";
+import { showToast } from "../features/toast/toastSlice";
 import { ErrorMessage } from "../components/Error";
 
 function Login() {
@@ -17,14 +19,25 @@ function Login() {
     formState: { errors },
   } = useForm();
 
+  // Login and Signup share state.auth.error, so clear any old one on the way in.
+  useEffect(() => {
+    dispatch(clearAuthError());
+  }, [dispatch]);
+
   const onSubmit = (data) => {
     dispatch(login(data))
     .unwrap()
-    .then(()=> {
+    .then((result)=> {
+      const username = result?.user?.username;
+
+      dispatch(showToast({
+        message: username ? `Welcome back, ${username}!` : "Login successful.",
+      }));
+
       navigate("/", { replace: true } );
     })
     .catch(() => {
-        
+
       });
   };
 
