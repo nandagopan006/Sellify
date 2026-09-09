@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { fetchProduct } from "../features/products/productSlice";
 import { addToCart } from "../features/cart/cartSlice";
+import { showToast } from "../features/toast/toastSlice";
 import Loading from "../components/Loading";
 import { ErrorMessage } from "../components/Error";
 
@@ -17,25 +18,57 @@ function ProductDetails() {
   );
   const currentUser = useSelector((state) => state.auth.user);
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
+  const cartItems = useSelector((state) => state.cart.items);
 
   useEffect(() => {
     dispatch(fetchProduct(id));
   }, [dispatch, id]);
 
+  // A listing is gone once its stock runs out or it has been sold.
+  const isOutOfStock = !selectedProduct?.stock || selectedProduct?.is_sold;
+
+  const itemInCart = cartItems.find(
+    (item) => item.id === selectedProduct?.id
+  );
+
   const handleAddToCart = () => {
     if (!isAuthenticated) {
-      alert("Please login to add products to your cart.");
+      dispatch(showToast({
+        message: "Please login to add products to your cart.",
+        type: "error",
+      }));
       navigate("/login");
       return;
     }
 
     if (currentUser && currentUser.username === selectedProduct.seller) {
-      alert("You cannot add your own product to the cart.");
+      dispatch(showToast({
+        message: "You cannot add your own product to the cart.",
+        type: "error",
+      }));
+      return;
+    }
+
+    if (isOutOfStock) {
+      dispatch(showToast({
+        message: "This product is out of stock.",
+        type: "error",
+      }));
+      return;
+    }
+
+    // The cart already holds everything the seller has, so adding again would
+    // silently do nothing.
+    if (itemInCart && itemInCart.quantity >= selectedProduct.stock) {
+      dispatch(showToast({
+        message: `Only ${selectedProduct.stock} in stock, and your cart already has ${itemInCart.quantity}.`,
+        type: "error",
+      }));
       return;
     }
 
     dispatch(addToCart(selectedProduct));
-    alert("Added to cart!");
+    dispatch(showToast({ message: "Added to cart." }));
   };
 
   if (loading) {
@@ -92,7 +125,9 @@ function ProductDetails() {
             </div>
             <div className="meta-item">
               <span className="meta-label">Stock</span>
-              <span className="meta-value">{selectedProduct.stock}</span>
+              <span className="meta-value">
+                {isOutOfStock ? "Out of stock" : selectedProduct.stock}
+              </span>
             </div>
           </div>
 
@@ -102,7 +137,13 @@ function ProductDetails() {
           </div>
 
           <div className="product-details-actions">
-            {!isAuthenticated && (
+            {!isOwner && isOutOfStock && (
+              <button className="btn btn-primary btn-block" disabled>
+                Out of Stock
+              </button>
+            )}
+
+            {!isAuthenticated && !isOutOfStock && (
               <button
                 className="btn btn-primary btn-block"
                 onClick={() => navigate("/login")}
@@ -115,7 +156,7 @@ function ProductDetails() {
               <ErrorMessage message="This is your own product. You cannot add it to the cart." />
             )}
 
-            {isAuthenticated && !isOwner && (
+            {isAuthenticated && !isOwner && !isOutOfStock && (
               <button
                 className="btn btn-primary btn-block"
                 onClick={handleAddToCart}
