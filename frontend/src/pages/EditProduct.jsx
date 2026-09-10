@@ -9,6 +9,13 @@ import {
 } from "../features/products/productSlice";
 import Loading from "../components/Loading";
 import { ErrorMessage } from "../components/Error";
+import {
+  titleRules,
+  descriptionRules,
+  priceRules,
+  categoryRules,
+  imageUrlRules,
+} from "../utils/validationRules";
 
 function EditProduct() {
   const { id } = useParams();
@@ -43,9 +50,13 @@ function EditProduct() {
   }, [selectedProduct, reset]);
 
   const onSubmit = (data) => {
+    // Trim before sending, the same way the Sell form does.
     const productData = {
-      ...data,
+      title: data.title.trim(),
+      description: data.description.trim(),
       price: Number(data.price),
+      category: data.category.trim(),
+      image_url: data.image_url.trim(),
       stock: 1,
     };
 
@@ -94,7 +105,7 @@ function EditProduct() {
             <input
               type="text"
               className="form-input"
-              {...register("title", { required: "Title is required" })}
+              {...register("title", titleRules)}
             />
             {errors.title && (
               <span className="form-error">{errors.title.message}</span>
@@ -105,13 +116,7 @@ function EditProduct() {
             <label className="form-label">Description</label>
             <textarea
               className="form-textarea"
-              {...register("description", {
-                required: "Description is required",
-                minLength: {
-                  value: 10,
-                  message: "Description must be at least 10 characters",
-                },
-              })}
+              {...register("description", descriptionRules)}
             />
             {errors.description && (
               <span className="form-error">{errors.description.message}</span>
@@ -125,10 +130,7 @@ function EditProduct() {
                 type="number"
                 step="0.01"
                 className="form-input"
-                {...register("price", {
-                  required: "Price is required",
-                  min: { value: 0.01, message: "Price must be greater than zero" },
-                })}
+                {...register("price", priceRules)}
               />
               {errors.price && (
                 <span className="form-error">{errors.price.message}</span>
@@ -140,7 +142,7 @@ function EditProduct() {
               <input
                 type="text"
                 className="form-input"
-                {...register("category", { required: "Category is required" })}
+                {...register("category", categoryRules)}
               />
               {errors.category && (
                 <span className="form-error">{errors.category.message}</span>
@@ -153,7 +155,7 @@ function EditProduct() {
             <input
               type="url"
               className="form-input"
-              {...register("image_url", { required: "Image URL is required" })}
+              {...register("image_url", imageUrlRules)}
             />
             {errors.image_url && (
               <span className="form-error">{errors.image_url.message}</span>

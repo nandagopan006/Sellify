@@ -5,6 +5,7 @@ import ProductCard from "../components/ProductCard";
 import Loading from "../components/Loading";
 import { fetchProducts } from "../features/products/productSlice";
 import { ErrorMessage } from "../components/Error";
+import { getPriceFilterError } from "../utils/validationRules";
 
 function Home() {
   const dispatch = useDispatch();
@@ -12,6 +13,7 @@ function Home() {
   const [category, setCategory] = useState("");
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [filterError, setFilterError] = useState("");
 
   const { products, loading, error } = useSelector(
     (state) => state.products
@@ -23,13 +25,27 @@ function Home() {
 
   const handleFilter = (event) => {
     event.preventDefault();
-    dispatch(fetchProducts({ category, minPrice, maxPrice }));
+
+    // Check the price boxes before asking the server for anything.
+    const message = getPriceFilterError(minPrice, maxPrice);
+
+    if (message) {
+      setFilterError(message);
+      return;
+    }
+
+    setFilterError("");
+
+    dispatch(
+      fetchProducts({ category: category.trim(), minPrice, maxPrice })
+    );
   };
 
   const handleClearFilter = () => {
     setCategory("");
     setMinPrice("");
     setMaxPrice("");
+    setFilterError("");
     dispatch(fetchProducts());
   };
 
@@ -66,6 +82,7 @@ function Home() {
             <label className="form-label">Min Price (₹)</label>
             <input
               type="number"
+              min="0"
               className="form-input"
               value={minPrice}
               onChange={(event) => setMinPrice(event.target.value)}
@@ -77,6 +94,7 @@ function Home() {
             <label className="form-label">Max Price (₹)</label>
             <input
               type="number"
+              min="0"
               className="form-input"
               value={maxPrice}
               onChange={(event) => setMaxPrice(event.target.value)}
@@ -96,6 +114,15 @@ function Home() {
             Clear Filters
           </button>
         </form>
+
+        {filterError && (
+          <span
+            className="form-error"
+            style={{ display: "block", marginTop: "0.75rem" }}
+          >
+            {filterError}
+          </span>
+        )}
       </section>
 
       {/* Available Products Section */}

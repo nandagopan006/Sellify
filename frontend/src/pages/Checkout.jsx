@@ -7,6 +7,7 @@ import {
   checkout,
   resetCheckout,
 } from "../features/checkout/checkoutSlice";
+import { showToast } from "../features/toast/toastSlice";
 
 function Checkout() {
   const dispatch = useDispatch();
@@ -26,6 +27,24 @@ function Checkout() {
         quantity: item.quantity,
       };
     });
+
+    // The cart is kept in localStorage, which anyone can edit by hand, so
+    // check every line one last time before building the request.
+    const everyItemLooksRight = checkoutItems.every(
+      (item) =>
+        Number.isInteger(item.product_id) &&
+        item.product_id > 0 &&
+        Number.isInteger(item.quantity) &&
+        item.quantity >= 1
+    );
+
+    if (checkoutItems.length === 0 || !everyItemLooksRight) {
+      dispatch(showToast({
+        message: "Your cart has an invalid item. Please remove it and try again.",
+        type: "error",
+      }));
+      return;
+    }
 
     dispatch(checkout(checkoutItems));
   };

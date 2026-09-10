@@ -4,6 +4,11 @@ from rest_framework import serializers
 from .models import Product
 
 
+# TextField has no length limit of its own, so we pick one. Raise this number
+# if sellers ever need longer descriptions.
+MAX_DESCRIPTION_LENGTH = 5000
+
+
 class ProductSerializer(serializers.ModelSerializer):
     seller = serializers.ReadOnlyField(source="seller.username")
 
@@ -34,6 +39,9 @@ class ProductSerializer(serializers.ModelSerializer):
             "description": {"required": True, "allow_blank": False},
             "price": {"required": True},
             "category": {"required": True, "allow_blank": False},
+            # The model says blank=True, so without this the API happily
+            # created products with no picture at all.
+            "image_url": {"required": True, "allow_blank": False},
         }
 
     def validate_title(self, value):
@@ -60,6 +68,11 @@ class ProductSerializer(serializers.ModelSerializer):
                 "Description must be at least 10 characters long."
             )
 
+
+        if len(description) > MAX_DESCRIPTION_LENGTH:
+            raise serializers.ValidationError(
+                f"Description cannot be longer than {MAX_DESCRIPTION_LENGTH} characters."
+            )
 
         if not re.match(r"^[a-zA-Z]", description):
             raise serializers.ValidationError(
@@ -90,6 +103,18 @@ class ProductSerializer(serializers.ModelSerializer):
             )
 
         return value
+
+    def validate_image_url(self, value):
+        url = value.strip()
+
+        # URLField already rejects things like "javascript:alert(1)", but it
+        # also allows ftp:// and similar, which a browser <img> cannot show.
+        if not url.startswith("http://") and not url.startswith("https://"):
+            raise serializers.ValidationError(
+                "Image URL must start with http:// or https://."
+            )
+
+        return url
 
     def validate_stock(self, value):
         if value != 1:

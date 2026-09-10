@@ -4,6 +4,13 @@ import { useNavigate } from "react-router-dom";
 
 import { createProduct } from "../features/products/productSlice";
 import { ErrorMessage } from "../components/Error";
+import {
+  titleRules,
+  descriptionRules,
+  priceRules,
+  categoryRules,
+  imageUrlRules,
+} from "../utils/validationRules";
 
 function Sell() {
   const dispatch = useDispatch();
@@ -17,12 +24,14 @@ function Sell() {
   } = useForm();
 
   const onSubmit = (data) => {
+    // Trim before sending. The serializer strips these too, but the value we
+    // store should be the value we validated, not one with stray spaces.
     const productData = {
-      title: data.title,
-      description: data.description,
+      title: data.title.trim(),
+      description: data.description.trim(),
       price: Number(data.price),
-      category: data.category,
-      image_url: data.image_url,
+      category: data.category.trim(),
+      image_url: data.image_url.trim(),
       stock: 1,
     };
 
@@ -56,7 +65,7 @@ function Sell() {
               type="text"
               className="form-input"
               placeholder="e.g. Apple iPhone 14 128GB"
-              {...register("title", { required: "Title is required" })}
+              {...register("title", titleRules)}
             />
             {errors.title && (
               <span className="form-error">{errors.title.message}</span>
@@ -68,13 +77,7 @@ function Sell() {
             <textarea
               className="form-textarea"
               placeholder="Describe the condition, features, accessories included..."
-              {...register("description", {
-                required: "Description is required",
-                minLength: {
-                  value: 10,
-                  message: "Description must be at least 10 characters",
-                },
-              })}
+              {...register("description", descriptionRules)}
             />
             {errors.description && (
               <span className="form-error">{errors.description.message}</span>
@@ -89,10 +92,7 @@ function Sell() {
                 step="0.01"
                 className="form-input"
                 placeholder="49999"
-                {...register("price", {
-                  required: "Price is required",
-                  min: { value: 0.01, message: "Price must be greater than zero" },
-                })}
+                {...register("price", priceRules)}
               />
               {errors.price && (
                 <span className="form-error">{errors.price.message}</span>
@@ -105,7 +105,7 @@ function Sell() {
                 type="text"
                 className="form-input"
                 placeholder="e.g. Electronics, Vehicles"
-                {...register("category", { required: "Category is required" })}
+                {...register("category", categoryRules)}
               />
               {errors.category && (
                 <span className="form-error">{errors.category.message}</span>
@@ -119,7 +119,7 @@ function Sell() {
               type="url"
               className="form-input"
               placeholder="https://images.unsplash.com/photo-..."
-              {...register("image_url", { required: "Image URL is required" })}
+              {...register("image_url", imageUrlRules)}
             />
             {errors.image_url && (
               <span className="form-error">{errors.image_url.message}</span>

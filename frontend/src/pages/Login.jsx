@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { login, clearAuthError } from "../features/auth/authSlice";
 import { showToast } from "../features/toast/toastSlice";
 import { ErrorMessage } from "../components/Error";
+import { emailRules, loginPasswordRules } from "../utils/validationRules";
 
 function Login() {
   const navigate = useNavigate();
@@ -25,7 +26,9 @@ function Login() {
   }, [dispatch]);
 
   const onSubmit = (data) => {
-    dispatch(login(data))
+    // Send a tidy payload: the server lowercases the email anyway, but a
+    // stray space typed by the user should never reach it.
+    dispatch(login({ email: data.email.trim(), password: data.password }))
     .unwrap()
     .then((result)=> {
       const username = result?.user?.username;
@@ -60,7 +63,7 @@ function Login() {
               type="email"
               className="form-input"
               placeholder="you@example.com"
-              {...register("email", { required: "Email is required" })}
+              {...register("email", emailRules)}
             />
             {errors.email && (
               <span className="form-error">{errors.email.message}</span>
@@ -73,9 +76,7 @@ function Login() {
               type="password"
               className="form-input"
               placeholder="••••••••"
-              {...register("password", {
-                required: "Password is required",
-              })}
+              {...register("password", loginPasswordRules)}
             />
             {errors.password && (
               <span className="form-error">{errors.password.message}</span>

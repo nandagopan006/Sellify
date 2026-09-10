@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 import re
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 
 class SignupSerializer(serializers.ModelSerializer):
     
@@ -121,11 +122,20 @@ class LoginSerializer(serializers.Serializer):
         }
         
 class LogoutSerializer(serializers.Serializer):
-    refresh=serializers.CharField()
+    refresh=serializers.CharField(allow_blank=False)
     
     def validate(self,attrs):
+        # RefreshToken() raises TokenError when the string is not a real token.
+        # That error is not a serializer error, so without this try/except it
+        # escapes and Django answers with a 500: a simple expired token then
+        # looks to the user like the server crashed.
+        try:
+            self.token=RefreshToken(attrs["refresh"])
+        except TokenError:
+            raise serializers.ValidationError(
+                {"refresh": "This refresh token is invalid or has already expired."}
+            )
         
-        self.token=RefreshToken(attrs["refresh"])
         return attrs
     
     def save(self, **kwargs):

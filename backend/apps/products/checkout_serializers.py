@@ -1,10 +1,21 @@
 from rest_framework import serializers
 
 
+# Nobody buys 50 different things at once on this marketplace, and every
+# listing only ever has one item, so these caps keep a hand written request
+# from sending us a huge list to chew through.
+MAX_ITEMS = 50
+MAX_QUANTITY = 100
+
+
 class CheckoutSerializer(serializers.Serializer):
     items = serializers.ListField(
         child=serializers.DictField(),
         allow_empty=False,
+        max_length=MAX_ITEMS,
+        error_messages={
+            "max_length": f"You cannot check out more than {MAX_ITEMS} items at once.",
+        },
     )
 
     def validate_items(self, value):
@@ -25,6 +36,11 @@ class CheckoutSerializer(serializers.Serializer):
                     "product_id and quantity must be integers."
                 )
 
+            if product_id < 1:
+                raise serializers.ValidationError(
+                    "product_id must be a positive number."
+                )
+
             if product_id in used_product_ids:
                 raise serializers.ValidationError(
                     "Each product may appear only once."
@@ -32,6 +48,11 @@ class CheckoutSerializer(serializers.Serializer):
             if quantity < 1:
                 raise serializers.ValidationError(
                     "Quantity must be at least 1."
+                )
+
+            if quantity > MAX_QUANTITY:
+                raise serializers.ValidationError(
+                    f"Quantity cannot be more than {MAX_QUANTITY}."
                 )
 
             used_product_ids.append(product_id)

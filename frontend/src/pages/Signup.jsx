@@ -6,6 +6,12 @@ import { useSelector, useDispatch } from "react-redux";
 import { signup, clearAuthError } from "../features/auth/authSlice";
 import { showToast } from "../features/toast/toastSlice";
 import { ErrorMessage } from "../components/Error";
+import {
+  usernameRules,
+  emailRules,
+  passwordRules,
+  buildConfirmPasswordRules,
+} from "../utils/validationRules";
 
 function Signup() {
   const navigate = useNavigate();
@@ -34,8 +40,8 @@ function Signup() {
   const onSubmit = (data) => {
     dispatch(
       signup({
-        username: data.username,
-        email: data.email,
+        username: data.username.trim(),
+        email: data.email.trim(),
         password: data.password,
       })
     )
@@ -83,9 +89,7 @@ function Signup() {
               type="text"
               className="form-input"
               placeholder="e.g. john_doe"
-              {...register("username", {
-                required: "Username is required",
-              })}
+              {...register("username", usernameRules)}
             />
             {errors.username && (
               <span className="form-error">{errors.username.message}</span>
@@ -98,9 +102,7 @@ function Signup() {
               type="email"
               className="form-input"
               placeholder="you@example.com"
-              {...register("email", {
-                required: "Email is required",
-              })}
+              {...register("email", emailRules)}
             />
             {errors.email && (
               <span className="form-error">{errors.email.message}</span>
@@ -113,13 +115,7 @@ function Signup() {
               type="password"
               className="form-input"
               placeholder="At least 8 characters"
-              {...register("password", {
-                required: "Password is required",
-                minLength: {
-                  value: 8,
-                  message: "Password must be at least 8 characters",
-                },
-              })}
+              {...register("password", passwordRules)}
             />
             {errors.password && (
               <span className="form-error">{errors.password.message}</span>
@@ -132,11 +128,10 @@ function Signup() {
               type="password"
               className="form-input"
               placeholder="Re-enter your password"
-              {...register("confirmPassword", {
-                required: "Please confirm your password",
-                validate: (value) =>
-                  value === password || "Passwords do not match",
-              })}
+              {...register(
+                "confirmPassword",
+                buildConfirmPasswordRules(password)
+              )}
             />
             {errors.confirmPassword && (
               <span className="form-error">

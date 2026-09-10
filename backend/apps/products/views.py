@@ -7,6 +7,31 @@ from .models import Product
 from .serializers import ProductSerializer
 from .checkout_serializers import CheckoutSerializer
 from django.db import transaction
+from decimal import Decimal
+
+
+def parse_price_filter(raw_value, field_name):
+    """Reads a ?min_price= / ?max_price= value coming from the URL.
+
+    Everything in a query string is text, so "abc" arrives here just as easily
+    as "500". Handing that straight to the database raises an error and Django
+    turns it into a 500, so we check it first.
+
+    Returns a (price, error_message) pair. Only one of the two is ever filled in.
+    """
+    try:
+        price = Decimal(raw_value)
+    except (ArithmeticError, TypeError, ValueError):
+        return None, f"{field_name} must be a number."
+
+    # Decimal happily accepts "NaN" and "Infinity", which would break the query.
+    if not price.is_finite():
+        return None, f"{field_name} must be a number."
+
+    if price < 0:
+        return None, f"{field_name} cannot be negative."
+
+    return price, None
 
 
 class ProductListCreateView(APIView):
@@ -20,18 +45,48 @@ class ProductListCreateView(APIView):
 
     def get(self, request):
         products = Product.objects.filter(is_sold=False)
-        
+
         category = request.query_params.get("category")
-        min_price = request.query_params.get("min_price")
-        max_price = request.query_params.get("max_price")
+        min_price_raw = request.query_params.get("min_price")
+        max_price_raw = request.query_params.get("max_price")
 
         if category:
-            products = products.filter(category__iexact=category)
+            products = products.filter(category__iexact=category.strip())
 
-        if min_price:
+        # Check both prices before either of them touches the database.
+        min_price = None
+        max_price = None
+
+        if min_price_raw:
+            min_price, error = parse_price_filter(min_price_raw, "min_price")
+
+            if error:
+                return Response(
+                    {"message": error},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if max_price_raw:
+            max_price, error = parse_price_filter(max_price_raw, "max_price")
+
+            if error:
+                return Response(
+                    {"message": error},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # A backwards range can only ever return nothing, so say so instead of
+        # showing an empty page and letting the user wonder why.
+        if min_price is not None and max_price is not None and min_price > max_price:
+            return Response(
+                {"message": "min_price cannot be greater than max_price."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if min_price is not None:
             products = products.filter(price__gte=min_price)
 
-        if max_price:
+        if max_price is not None:
             products = products.filter(price__lte=max_price)
 
         serializer = ProductSerializer(products, many=True)
